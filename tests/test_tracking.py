@@ -150,3 +150,14 @@ def test_validation_and_limits(as_user, client, token):
     assert as_user("POST", "/v1/tracking", json=big).status_code == 413
     assert client.get("/health").json() == {"status": "ok"}
     assert client.get("/readyz").json() == {"status": "ready"}
+
+
+def test_a_dead_pooled_connection_is_replaced(as_user, migrated):
+    """Neon closes idle connections; the next request must still succeed (seen live 2026-11-12)."""
+    assert as_user("GET", "/v1/tracking").status_code == 200
+    with psycopg.connect(migrated, autocommit=True) as conn:
+        conn.execute(
+            "SELECT pg_terminate_backend(pid) FROM pg_stat_activity "
+            "WHERE datname = current_database() AND pid <> pg_backend_pid()"
+        )
+    assert as_user("GET", "/v1/tracking").status_code == 200

@@ -23,7 +23,10 @@ def make_pool(url: str, *, max_size: int = 4) -> ConnectionPool:
         min_size=0,
         max_size=max_size,
         timeout=5,
-        max_idle=300,
+        # Neon suspends idle computes and its pooler drops idle clients, so a pooled connection can be dead
+        # when a request takes it: check it first and open a fresh one instead of failing the request.
+        check=ConnectionPool.check_connection,
+        max_idle=120,
         max_lifetime=1800,
         # No startup "options": the Neon pooler (PgBouncer) refuses them. Timeouts are role
         # defaults set by grant_runtime, so every pooled backend has them.

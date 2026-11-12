@@ -24,7 +24,7 @@ import psycopg
 from fastapi import FastAPI, Header, HTTPException, Query, Request, Response
 from fastapi.responses import JSONResponse
 from psycopg.rows import dict_row
-from psycopg_pool import ConnectionPool
+from psycopg_pool import ConnectionPool, PoolTimeout
 from pydantic import BaseModel, ConfigDict, Field
 
 from tracking_api.auth import READ_SCOPE, WRITE_SCOPE, Forbidden, Principal, TokenVerifier, Unauthenticated
@@ -173,7 +173,7 @@ def create_app(pool: ConnectionPool, verifier: TokenVerifier) -> FastAPI:
                 conn.row_factory = dict_row  # type: ignore[assignment]
                 with conn.transaction():
                     yield conn  # type: ignore[misc]
-        except psycopg.OperationalError as exc:
+        except (psycopg.OperationalError, PoolTimeout) as exc:
             raise HTTPException(503, {"error": "unavailable"}) from exc
 
     def replayed(conn: psycopg.Connection[Any], user: str, key: str | None) -> JSONResponse | None:
