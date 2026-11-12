@@ -12,16 +12,17 @@ It replaces the Prisma tables and the 366-line Next.js route the web used to run
   `GATEWAY_ASSERTION_MODE` set to `report` first and then `enforce`.
 - **Auth:** platform-identity RS256 tokens. The audience is `tracking-api` and the scopes are `tracking.items:read` and
   `tracking.items:write`. The web gets them with `client_credentials` (`private_key_jwt`) as service client
-  `tracking-web`, and names the signed-in NextAuth user in `X-Tracking-User`. Every query is scoped to that user.
+  `tracking-web`, and names the signed-in NextAuth user in the path (`/v1/users/{userId}/...`; the gateway forwards only
+  standard headers). Every query is scoped to that user.
 
 ## API
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/v1/tracking` | the user's list; filters `category`, `status`, `isFavorite`, `search`; `limit` ≤ 100 with `next_cursor` |
-| POST | `/v1/tracking` | add; reuses an existing shared item (case-insensitive title + category); 409 if already tracked |
-| PUT | `/v1/tracking/{itemId}` | update; omitted fields stay, explicit `null` clears; 404 if not the user's |
-| DELETE | `/v1/tracking/{itemId}` | remove from the user's list; 404 if not the user's |
+| GET | `/v1/users/{userId}/tracking` | the user's list; filters `category`, `status`, `isFavorite`, `search`; `limit` ≤ 100 with `next_cursor` |
+| POST | `/v1/users/{userId}/tracking` | add; reuses an existing shared item (case-insensitive title + category); 409 if already tracked |
+| PUT | `/v1/users/{userId}/tracking/{itemId}` | update; omitted fields stay, explicit `null` clears; 404 if not the user's |
+| DELETE | `/v1/users/{userId}/tracking/{itemId}` | remove from the user's list; 404 if not the user's |
 | GET | `/v1/users/{userId}/export` | PDPA access export |
 | DELETE | `/v1/users/{userId}` | PDPA erasure; shared items stay (they carry no user id) |
 | GET | `/health`, `/readyz` | liveness; readiness checks the database |

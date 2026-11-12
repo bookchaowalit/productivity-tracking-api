@@ -1,8 +1,8 @@
 """Verify platform-identity bearer tokens (RS256) for the ``tracking-api`` audience.
 
 The tracking web is the only caller: it gets a short-lived service token from platform-identity
-(``client_credentials`` with ``private_key_jwt``) and names the signed-in user in
-``X-Tracking-User``. The token proves the caller is that web; the cell then scopes every query to
+(``client_credentials`` with ``private_key_jwt``) and names the signed-in user in the
+path (``/v1/users/{userId}/...``). The token proves the caller is that web; the cell then scopes every query to
 the named user, so one user can never read or change another user's rows.
 
 ``JwksKeys`` is a copy of the cellkit reference (cells own their code).

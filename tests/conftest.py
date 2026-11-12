@@ -100,9 +100,10 @@ def as_user(client: TestClient, token):
     def call(method: str, path: str, user: str = USER_A, *, scopes: str | None = None, **kw: Any):
         headers = {
             "Authorization": token(scopes) if scopes is not None else token(),
-            "X-Tracking-User": user,
             **kw.pop("headers", {}),
         }
-        return client.request(method, path, headers=headers, **kw)
+        return client.request(
+            method, path.replace("/v1/tracking", f"/v1/users/{user}/tracking", 1), headers=headers, **kw
+        )
 
     return call

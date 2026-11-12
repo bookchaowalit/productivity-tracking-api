@@ -126,27 +126,19 @@ def test_ac06_export_and_erase(as_user, client, token, migrated):
 
 
 def test_auth_and_scopes(client, as_user, token):
-    assert client.get("/v1/tracking", headers={"X-Tracking-User": USER_A}).status_code == 401
+    assert client.get(f"/v1/users/{USER_A}/tracking").status_code == 401
     assert (
         as_user("POST", "/v1/tracking", scopes=READ_SCOPE, json={"title": "x", "category": "BOOK"}).status_code == 403
     )
     assert (
-        client.get(
-            "/v1/tracking", headers={"Authorization": token(lifetime=7200), "X-Tracking-User": USER_A}
-        ).status_code
+        client.get(f"/v1/users/{USER_A}/tracking", headers={"Authorization": token(lifetime=7200)}).status_code == 401
+    )
+    assert (
+        client.get(f"/v1/users/{USER_A}/tracking", headers={"Authorization": token(audience="other-api")}).status_code
         == 401
     )
     assert (
-        client.get(
-            "/v1/tracking", headers={"Authorization": token(audience="other-api"), "X-Tracking-User": USER_A}
-        ).status_code
-        == 401
-    )
-    assert (
-        client.get(
-            "/v1/tracking", headers={"Authorization": token(**{"del": "x"}), "X-Tracking-User": USER_A}
-        ).status_code
-        == 401
+        client.get(f"/v1/users/{USER_A}/tracking", headers={"Authorization": token(**{"del": "x"})}).status_code == 401
     )
     assert as_user("GET", "/v1/tracking", user="bad user!").status_code == 400
 

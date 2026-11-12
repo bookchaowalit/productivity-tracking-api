@@ -91,7 +91,7 @@ def _new_id() -> str:
 
 def _user(value: str | None) -> str:
     if not value or not USER_RE.fullmatch(value):
-        raise HTTPException(400, {"error": "invalid_user", "message": "X-Tracking-User is required"})
+        raise HTTPException(400, {"error": "invalid_user", "message": "the user id in the path is invalid"})
     return value
 
 
@@ -216,10 +216,10 @@ def create_app(pool: ConnectionPool, verifier: TokenVerifier) -> FastAPI:
             conn.execute("SELECT 1")
         return {"status": "ready"}
 
-    @app.get("/v1/tracking")
+    @app.get("/v1/users/{user_id}/tracking")
     def list_tracking(
+        user_id: str,
         authorization: str | None = Header(default=None),
-        x_tracking_user: str | None = Header(default=None),
         category: str | None = None,
         status: str | None = None,
         isFavorite: bool = False,
@@ -228,7 +228,7 @@ def create_app(pool: ConnectionPool, verifier: TokenVerifier) -> FastAPI:
         cursor: str | None = None,
     ) -> dict[str, Any]:
         principal(authorization, READ_SCOPE)
-        user = _user(x_tracking_user)
+        user = _user(user_id)
         _check(category, CATEGORIES, "category")
         _check(status, STATUSES, "status")
         limit = min(limit, MAX_LIMIT)
@@ -271,15 +271,15 @@ def create_app(pool: ConnectionPool, verifier: TokenVerifier) -> FastAPI:
         )
         return {"items": items, "next_cursor": next_cursor}
 
-    @app.post("/v1/tracking", status_code=201)
+    @app.post("/v1/users/{user_id}/tracking", status_code=201)
     def add_tracking(
+        user_id: str,
         body: ItemIn,
         authorization: str | None = Header(default=None),
-        x_tracking_user: str | None = Header(default=None),
         idempotency_key: str | None = Header(default=None),
     ) -> JSONResponse:
         principal(authorization, WRITE_SCOPE)
-        user = _user(x_tracking_user)
+        user = _user(user_id)
         category = _check(body.category, CATEGORIES, "category")
         status = _check(body.status, STATUSES, "status") or "PLAN_TO_WATCH"
         rating = _check(body.rating, RATINGS, "rating")
@@ -335,16 +335,16 @@ def create_app(pool: ConnectionPool, verifier: TokenVerifier) -> FastAPI:
                 409, {"error": "already_tracked", "message": "This item is already on your list"}
             ) from exc
 
-    @app.put("/v1/tracking/{item_id}")
+    @app.put("/v1/users/{user_id}/tracking/{item_id}")
     async def update_tracking(
+        user_id: str,
         item_id: str,
         request: Request,
         authorization: str | None = Header(default=None),
-        x_tracking_user: str | None = Header(default=None),
         idempotency_key: str | None = Header(default=None),
     ) -> JSONResponse:
         principal(authorization, WRITE_SCOPE)
-        user = _user(x_tracking_user)
+        user = _user(user_id)
         try:
             body = await request.json()
         except ValueError as exc:
@@ -405,15 +405,15 @@ def create_app(pool: ConnectionPool, verifier: TokenVerifier) -> FastAPI:
             }
             return remember(conn, user, idempotency_key, "PUT", 200, result)
 
-    @app.delete("/v1/tracking/{item_id}")
+    @app.delete("/v1/users/{user_id}/tracking/{item_id}")
     def remove_tracking(
+        user_id: str,
         item_id: str,
         authorization: str | None = Header(default=None),
-        x_tracking_user: str | None = Header(default=None),
         idempotency_key: str | None = Header(default=None),
     ) -> JSONResponse:
         principal(authorization, WRITE_SCOPE)
-        user = _user(x_tracking_user)
+        user = _user(user_id)
         with tx() as conn:
             if (hit := replayed(conn, user, idempotency_key)) is not None:
                 return hit
