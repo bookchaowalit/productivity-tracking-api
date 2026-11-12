@@ -53,3 +53,8 @@ python_version = "3.12"
 files = ["src"]
 warn_unused_configs = true
 check_untyped_defs = true
+
+# Service code is checked; the tests stay gradual (fixtures and pytest-injected arguments are untyped).
+[[tool.mypy.overrides]]
+module = ["conftest", "test_*", "tests.*"]
+ignore_errors = true
