@@ -56,5 +56,5 @@ check_untyped_defs = true
 
 # Service code is checked; the tests stay gradual (fixtures and pytest-injected arguments are untyped).
 [[tool.mypy.overrides]]
-module = ["conftest", "test_*", "tests.*"]
+module = ["conftest", "test_gateway_assertion", "test_ops", "test_sentry", "test_tracking"]
 ignore_errors = true
