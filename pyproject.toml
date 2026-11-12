@@ -1,0 +1,55 @@
+[project]
+name = "tracking"
+version = "1.0.0"
+description = "Tracking cell (SPEC-003): its own API and database for productivity-tracking-web"
+requires-python = ">=3.12"
+dependencies = [
+    "psycopg[binary]>=3.2,<4",
+    "psycopg-pool>=3.2,<4",
+    "fastapi>=0.115,<1",
+    "pyjwt[crypto]>=2.10,<3",
+    "uvicorn[standard]>=0.30,<1",
+    "httpx>=0.27,<1",
+    "sentry-sdk>=2.72,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-cov>=7",
+    "pgserver>=0.1.4",
+    "mypy>=2.4",
+    "ruff>=0.8",
+]
+
+[project.scripts]
+tracking-api = "tracking_api.server:api"
+tracking-db = "tracking_api.server:db"
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.coverage.run]
+source = ["src"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "BLE", "UP", "C4", "SIM", "RUF", "PIE", "PT", "RET", "PERF", "LOG", "G"]
+ignore = ["E501", "B008"]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["src"]
+warn_unused_configs = true
+check_untyped_defs = true
