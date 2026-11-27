@@ -19,11 +19,11 @@ flowchart TD
   TOKEN -->|yes| ROUTE{"route /v1/users/userId/..."}
   ROUTE -->|"GET tracking"| LIST["list with filters, limit up to 100, next_cursor"]
   ROUTE -->|"POST, PUT, DELETE tracking"| IDEM{"Idempotency-Key sent (the web sends none today) and (user, key) already stored?"}
-  IDEM -->|yes| REPLAY["return the first answer, write nothing"]
+  IDEM -->|yes| REPLAY["return the stored successful answer, write nothing (errors are never stored)"]
   IDEM -->|"no, or no key sent (nothing stored)"| TX["one transaction: write + idempotency row only if key sent; activity_log: POST/DELETE always, PUT only when status becomes COMPLETED or a rating is set"]
   TX -->|"POST already tracked"| R409["409 already_tracked"]
   TX -->|"item not the user's"| R404["404 not_found"]
-  ROUTE -->|"GET export, DELETE user"| PDPA["PDPA export or erasure (shared items stay)"]
+  ROUTE -->|"GET export, DELETE user"| PDPA["PDPA export or erasure (shared items stay); in the API only, the web does not call it yet"]
   LIST --> DB[("Neon schema tracking: items, user_tracking, notes, activity_log, idempotency")]
   TX --> DB
   PDPA --> DB
