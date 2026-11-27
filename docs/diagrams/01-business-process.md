@@ -38,17 +38,26 @@ Sources: `src/tracking_api/app.py` (`create_app`, `add_tracking`, `update_tracki
 - deploy ส่งแค่โค้ด ไม่ migrate: เมื่อ PR มี migration ใหม่ ต้องรัน `tracking-db migrate` ก่อน merge (README, AGENTS.md); PR ที่เปลี่ยนเฉพาะโค้ดหรือเอกสารไม่ต้อง
 - migration `0001_init.sql` เป็นไฟล์เดียวที่มี; การ import จากตารางเดิมของเว็บทำผ่าน `tracking-db import` (`src/tracking_api/importer.py`)
 
-## To-Be
+## To-Be (SPEC-003, productivity-tracking-web, approved 2026-11-12)
 
-ไม่มี To-Be ที่เขียนไว้
+เป้าหมายตาม SPEC-003 (อนุมัติและ implement แล้ว 2026-11-12): cell นี้เป็นเจ้าของข้อมูล tracking ทั้งหมดหลัง gateway,
+เว็บเก็บแค่ NextAuth sign-in แล้วเรียก cell ด้วย token อายุสั้น; เกณฑ์ยอมรับ AC-01–AC-07:
+
+- AC-03: ทุก create, update และ delete เขียน activity log หนึ่งแถวใน transaction เดียวกัน; replay `Idempotency-Key` เดิมคืนผลแรกและไม่เขียนเพิ่ม
+- AC-04: คำขอที่ไม่ผ่าน gateway ได้ 403 (`GATEWAY_ASSERTION_MODE=enforce` หลัง report หนึ่งสัปดาห์)
+- AC-05: `GET /v1/tracking` คืนไม่เกิน 100 แถวพร้อม cursor
+- AC-06: PDPA export / erase ครอบคลุม tracking rows, notes และ activity ของผู้ใช้; item กลางที่ผู้ใช้สร้างคงอยู่โดยไม่มี user id
+
+Sources: `bookchaowalit-website/productivity-tracking-web:specs/003-tracking-cell/spec.md` (origin/main `a9bd186`)
 
 ## Gap
 
 | ID | As-Is → To-Be | Status | Owner | Evidence |
 |---|---|---|---|---|
-| G1 | ไม่มี To-Be ที่เขียนไว้ (ไม่มี PRODUCT.md, specs/ หรือ ADR ใน repo; README อ้าง SPEC-003 ใน repo ของเว็บเท่านั้น) → owner กำหนด To-Be หรือยืนยันว่า As-Is คือเป้าหมาย | decide | owner | `README.md`; ไม่มี `PRODUCT.md` / `specs/` |
+| G1 | PUT เขียน activity log เฉพาะเมื่อเปลี่ยนเป็น COMPLETED หรือตั้ง rating; แก้เฉพาะ `progress` ไม่มีแถว log → ทุก update เขียน log หนึ่งแถว (AC-03) | todo | claude | `src/tracking_api/app.py` (`update_tracking`); SPEC-003 AC-03 |
+| G2 | `GATEWAY_ASSERTION_MODE` ค่าเริ่มต้น `off`, ค่าบน production ไม่เห็นจากโค้ด [ต้องยืนยัน] → `enforce` หลัง report หนึ่งสัปดาห์ (AC-04) | todo | owner | `README.md`; SPEC-003 AC-04 |
 
 ## Open questions
 
 - `GATEWAY_ASSERTION_MODE` ใน production เป็น report หรือ enforce (README เขียนว่า report ก่อนแล้ว enforce) [ต้องยืนยัน]
-- SPEC-003 อยู่ใน repo productivity-tracking-web ไม่ได้อยู่ที่นี่: ควรคัดลอกหรืออ้างอิงเป็น To-Be ของ cell นี้หรือไม่
+- SPEC-003 อยู่ใน repo productivity-tracking-web ไม่ได้อยู่ที่นี่ (อ้างอิงเป็น To-Be ข้าม repo)
