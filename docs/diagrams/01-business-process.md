@@ -18,7 +18,7 @@ flowchart TD
   TOKEN -->|"required scope missing, e.g. POST with read only"| R403B["403 forbidden"]
   TOKEN -->|yes| ROUTE{"route /v1/users/userId/..."}
   ROUTE -->|"GET tracking"| LIST["list with filters, limit up to 100, next_cursor"]
-  ROUTE -->|"POST, PUT, DELETE tracking"| IDEM{"Idempotency-Key header sent, and (user, key) already stored?"}
+  ROUTE -->|"POST, PUT, DELETE tracking"| IDEM{"Idempotency-Key sent (the web sends none today) and (user, key) already stored?"}
   IDEM -->|yes| REPLAY["return the first answer, write nothing"]
   IDEM -->|"no, or no key sent (nothing stored)"| TX["one transaction: write + idempotency row only if key sent; activity_log: POST/DELETE always, PUT only when status becomes COMPLETED or a rating is set"]
   TX -->|"POST already tracked"| R409["409 already_tracked"]
@@ -44,8 +44,8 @@ Sources: `src/tracking_api/app.py` (`create_app`, `add_tracking`, `update_tracki
 เว็บเก็บแค่ NextAuth sign-in แล้วเรียก cell ด้วย token อายุสั้น; เกณฑ์ยอมรับ AC-01–AC-07:
 
 - AC-03: ทุก create, update และ delete เขียน activity log หนึ่งแถวใน transaction เดียวกัน; replay `Idempotency-Key` เดิมคืนผลแรกและไม่เขียนเพิ่ม
-- AC-04: คำขอที่ไม่ผ่าน gateway ได้ 403 (`GATEWAY_ASSERTION_MODE=enforce` หลัง report หนึ่งสัปดาห์)
-- AC-05: `GET /v1/tracking` คืนไม่เกิน 100 แถวพร้อม cursor
+- AC-04: คำขอที่ไม่ผ่าน gateway ได้ 403 (`GATEWAY_ASSERTION_MODE=enforce` หลัง report หนึ่งสัปดาห์); `/health` และ `/readyz` อยู่นอกการตรวจ
+- AC-05: list คืนไม่เกิน 100 แถวพร้อม cursor (SPEC เขียน `GET /v1/tracking`; เส้นทางจริงคือ `GET /v1/users/{userId}/tracking`)
 - AC-06: PDPA export / erase ครอบคลุม tracking rows, notes และ activity ของผู้ใช้; item กลางที่ผู้ใช้สร้างคงอยู่โดยไม่มี user id
 
 Sources: `bookchaowalit-website/productivity-tracking-web:specs/003-tracking-cell/spec.md` (origin/main `a9bd186`)
